@@ -3,77 +3,80 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class PlayerController : MonoBehaviour {
+public class PlayerController : MonoBehaviour
+{
     public GameObject grids;
     public GameObject goal;
     public GameObject winText;
+    public float moveSpeed = 10.0f;
 
     public int currentGrid;
-	// Use this for initialization
-	void Start () {
-        print("Start");
+    private bool isMoving;
+    // Use this for initialization
+    private delegate void ShowTextAction();
+    private ShowTextAction ShowText;
+    private int currentStep;
+    void Start()
+    {
         winText.SetActive(false);
+        currentGrid = -1;
     }
 
-    //Update is called once per frame
-    void Update () {
-    }
     private void OnEnable()
     {
         SaveDataManager.onSave += Save;
         SaveDataManager.onLoad += Load;
-
     }
-    private void Awake()
-    {
-        print("Awake");
-        currentGrid = 0;
 
-    }
     private void OnDestroy()
     {
         SaveDataManager.onSave -= Save;
         SaveDataManager.onLoad -= Load;
     }
 
-    public void Move() {
-        print("move");
-        try
+    public void Move()
+    {
+        if (!isMoving)
         {
-            currentGrid += 1;
-            Transform target = grids.transform.GetChild(currentGrid);
-            transform.position = target.position;
-        }
-        catch(UnityException)
-        {
-            transform.position = goal.transform.position;
-            winText.SetActive(true);
-            Debug.Log("end");
-        }
-        finally
-        {
-
+            int step = (int)Random.Range(1.0f, 6.0f);
+            StartCoroutine(Move(step));
         }
     }
-
-    public void Move(int step)
+    private void ShowStep()
     {
-        try
-        {
-            print(grids);
-            Transform target = grids.transform.GetChild(step);
-            transform.position = target.position;
-        }
-        catch (UnityException)
-        {
-            transform.position = goal.transform.position;
-            winText.SetActive(true);
-            Debug.Log("end");
-        }
-        finally
-        {
+        GUILayout.Label(currentStep.ToString());
+    }
 
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        Debug.Log(other.name);
+    }
+    public IEnumerator Move(int step)
+    {
+        isMoving = true;
+        ShowText += ShowStep;
+        Transform target;
+        for (currentStep = step - 1; currentStep > 0; currentStep--)
+        {
+            if (currentGrid < grids.transform.childCount - 1)
+            {
+                currentGrid++;
+
+                target = grids.transform.GetChild(currentGrid);
+            }
+            else
+            {
+
+                target = goal.transform;
+            }
+            while (Vector3.Distance(transform.position, target.transform.position) != 0)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, target.position, moveSpeed * Time.deltaTime);
+                yield return null;
+            }
         }
+        ShowText -= ShowStep;
+        isMoving = false;
     }
 
     private void Save()
@@ -87,6 +90,19 @@ public class PlayerController : MonoBehaviour {
         Debug.Log("player.Load()");
         currentGrid = PlayerPrefs.GetInt("currentGrid");
         Move(currentGrid);
+    }
+    public GUIStyle style;
+    void OnGUI()
+    {
+        GUILayout.BeginArea(new Rect(10, 10, 50, 50));
+        if (GUILayout.Button("前进"))
+            Move();
+        if (ShowText != null)
+        {
+            ShowText();
+        }
+        GUILayout.EndArea();
+
     }
 }
 

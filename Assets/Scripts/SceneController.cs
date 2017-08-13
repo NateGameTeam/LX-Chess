@@ -4,7 +4,8 @@ using UnityEngine;
 using System;
 using UnityEngine.SceneManagement;
 
-public class SceneController : MonoBehaviour {
+public class SceneController : MonoBehaviour
+{
     public GameObject MainMenuCanvas;
     public GameObject BoardMenuCanvas;
     public event Action BeforeSceneUnload;
@@ -16,9 +17,9 @@ public class SceneController : MonoBehaviour {
     public string startingSceneName = "SecurityRoom";
     public string initialStartingPositionName = "DoorToMarket";
     public SaveData playerSaveData;
-    public void newGame()
+    public IEnumerator newGame()
     {
-        SceneManager.LoadSceneAsync("Main", LoadSceneMode.Additive);
+        yield return SceneManager.LoadSceneAsync("Main", LoadSceneMode.Additive);
         SwitchMenu();
     }
 
@@ -42,10 +43,10 @@ public class SceneController : MonoBehaviour {
         SwitchMenu();
     }
 
-    public void LoadScene(string sceneName)
+    public IEnumerator LoadScene(string sceneName)
     {
+        yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
         print(sceneName);
-        SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
     }
 
     public void ReturnMainMenu()
